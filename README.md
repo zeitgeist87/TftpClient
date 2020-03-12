@@ -51,10 +51,10 @@ void loop() {
 }
 ```
 
-# License
+## License
 
 This library is licenses under the Apache 2.0 Open Source License.
 
-# Sponsor
+## Sponsor
 
 This library was sponsored by Jonathan Beri.
