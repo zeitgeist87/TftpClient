@@ -51,6 +51,19 @@ void loop() {
 }
 ```
 
+## Features
+
+### Supported Features
+
+* File Download
+* `blksize` Option
+
+### Unsupported Features
+
+* File Upload
+* `tsize` and `timeout` Options
+* Obscure and useless transfer modes like **Netascii** and **Mail transfer**
+
 ## License
 
 This library is licenses under the Apache 2.0 Open Source License.
