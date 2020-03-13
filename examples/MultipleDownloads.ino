@@ -10,28 +10,24 @@
 #include <WiFiUdp.h>
 
 /*
- * Local port the Arduino listens for responses from the server.
- * Can be any valid UDP port, but every TftpClient instance should
- * have a different one. It acts like a transaction ID.
- */
-const uint16_t local_port = 2390;
-/*
  * IP Address of the TFTP server. Use broadcast by default for
  * easier setup. Change to the actual IP of your TFTP server.
  */
 const IPAddress tftp_server_ip = IPAddress(255, 255, 255, 255);
+//const IPAddress tftp_server_ip = IPAddress(192, 168, 0, 22);
 const uint16_t tftp_server_port = 69;
 
 // Wifi credentials
 const char *ssid = "...";
-const char *password = "...";
+const char *password = "....";
 
 /*
  * Declaration of the TftpClient. The template
  * parameter sets the platform specific UDP
  * implementation.
  */
-TftpClient<WiFiUDP> client;
+TftpClient<WiFiUDP> client1;
+TftpClient<WiFiUDP> client2;
 
 // Buffer to hold incoming data
 uint8_t packet_buffer[256];
@@ -45,24 +41,24 @@ void setup() {
 
   Serial.println("\nStarting connection to server...");
 
-  /*
-   * Set transaction ID, which is also the UDP port.
-   * If you omit this call a suitable transaction ID will be
-   * automactically chosen.
-   */
-  client.begin(local_port);
-
-  // Start the download of a file using a broadcast by default
-  client.beginDownload("test2.txt", tftp_server_ip, tftp_server_port);
+  // Begin downloading multiple files at once
+  client1.beginDownload("test.txt", tftp_server_ip, tftp_server_port);
+  client2.beginDownload("test.txt", tftp_server_ip, tftp_server_port);
 }
 
 void loop() {
-  if (client.available()) {
+  downloadWithClient(client1, 1);
+  downloadWithClient(client2, 2);
+}
 
+void downloadWithClient(TftpClient<WiFiUDP> &client, int client_id) {
+  if (client.available()) {
     int bytes_read = client.read(packet_buffer, sizeof(packet_buffer));
 
     // Print the downloaded text
-    Serial.print("Received ");
+    Serial.print("Client ");
+    Serial.print(client_id);
+    Serial.print(" Received ");
     Serial.print(bytes_read);
     Serial.println(" bytes:");
 
@@ -70,14 +66,17 @@ void loop() {
   }
 
   if (client.error()) {
-    Serial.print("Error occurred: ");
+    Serial.print("Client ");
+    Serial.print(client_id);
+    Serial.print(" Error occurred:");
     Serial.println(client.errorMessage());
     client.stop();
-    client.beginDownload("test.txt", tftp_server_ip, tftp_server_port);
   }
 
   if (client.finished()) {
-    Serial.println("Transfer finished!");
+    Serial.print("Client ");
+    Serial.print(client_id);
+    Serial.println(" Transfer finished!");
     client.stop();
   }
 }

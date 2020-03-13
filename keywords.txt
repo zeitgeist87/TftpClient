@@ -6,15 +6,20 @@
 # Datatypes (KEYWORD1)
 #######################################
 
-#AsyncUDP	KEYWORD1
-#AsyncUDPPacket	KEYWORD1
+TftpClient	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
 
-#connect	KEYWORD2
-#connected	KEYWORD2
+beginDownload	KEYWORD2
+stop	KEYWORD2
+finished	KEYWORD2
+error	KEYWORD2
+stopped	KEYWORD2
+errorMessage	KEYWORD2
+remoteIP	KEYWORD2
+remotePort	KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
