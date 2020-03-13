@@ -37,7 +37,7 @@ TftpClient<WiFiUDP> client;
 uint8_t packet_buffer[256];
 
 void setup() {
-  // Initilize hardware serial:
+  // Initilize hardware serial
   Serial.begin(115200);
 
   setupWiFi();
@@ -53,7 +53,7 @@ void setup() {
   client.begin(local_port);
 
   // Start the download of a file using a broadcast by default
-  client.beginDownload("test2.txt", tftp_server_ip, tftp_server_port);
+  client.beginDownload("test.txt", tftp_server_ip, tftp_server_port);
 }
 
 void loop() {
@@ -73,7 +73,6 @@ void loop() {
     Serial.print("Error occurred: ");
     Serial.println(client.errorMessage());
     client.stop();
-    client.beginDownload("test.txt", tftp_server_ip, tftp_server_port);
   }
 
   if (client.finished()) {
