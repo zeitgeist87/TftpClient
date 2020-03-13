@@ -1,0 +1,14 @@
+# This is the test file used by the examples
+
+Please copy it into your TFTP server directory. On Linux this directory is
+usually `/srv/tftp`.
+
+Here is some dummy text that should appear on the Serial Monitor of your
+Arduino:
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
+incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
+nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+culpa qui officia deserunt mollit anim id est laborum.
