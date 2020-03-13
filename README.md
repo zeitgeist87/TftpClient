@@ -37,6 +37,15 @@ void loop() {
 }
 ```
 
+## Getting Started
+
+### Linux
+
+* Install a TFTP server for your Linux Distro. For example:
+  `sudo pacman -S tftp-hpa`
+* Start the `tftpd` service: `sudo systemctl start tftpd`
+* Copy some files to the TFTP directory `sudo cp test.txt /srv/tftp`
+
 ## Features
 
 ### Supported Features
@@ -56,4 +65,4 @@ This library is licenses under the Apache 2.0 Open Source License.
 
 ## Sponsor
 
-This library was sponsored by Jonathan Beri.
+This library was sponsored by [Jonathan Beri](https://github.com/beriberikix) via Upwork.
