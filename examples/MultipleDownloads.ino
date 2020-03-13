@@ -33,7 +33,7 @@ TftpClient<WiFiUDP> client2;
 uint8_t packet_buffer[256];
 
 void setup() {
-  // Initilize hardware serial:
+  // Initilize hardware serial
   Serial.begin(115200);
 
   setupWiFi();

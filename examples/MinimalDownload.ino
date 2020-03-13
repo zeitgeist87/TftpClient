@@ -21,14 +21,14 @@ const char *password = "...";
 TftpClient<WiFiUDP> tftp;
 
 void setup() {
-  // Initilize hardware serial:
+  // Initilize hardware serial
   Serial.begin(115200);
 
   setupWiFi();
 
   Serial.println("\nStarting connection to server...");
 
-  // Begin downloading uses default port and boradcast IP
+  // Begin downloading uses default port and broaddcast IP
   tftp.beginDownload("test.txt");
 }
 

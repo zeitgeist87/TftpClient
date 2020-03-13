@@ -25,6 +25,20 @@
 template<class UDPImpl>
 class TftpClient : public Stream {
  public:
+  /**
+   * Initializes this instance with a transaction id (UDP port)
+   *
+   * This method allows the user to set the transaction ID explicitly. Usually
+   * this is not necessary unless there is a conflict with another UDP program.
+   * The transaction id is the UDP port the Arduino listens on for packets from
+   * the server. However, it is not the UDP port of the server which is usually
+   * 69. The server port can be set with the @see beginDownload() method.
+   *
+   * @param local_port The UDP port used by the Arduino for this instance.
+   *                   Acts as a transaction id. Defaults to 0 which means, a
+   *                   unique id will be automatically generated.
+   * @returns 1 if successful and 0 otherwise.
+   */
   uint8_t begin(uint16_t local_port = 0) {
     if (local_port == 0) {
       // Use a different port for every instance
@@ -39,6 +53,9 @@ class TftpClient : public Stream {
     return udp_.begin(local_port);
   }
 
+  /**
+   * Stops the current transaction and resets the internal state
+   */
   void stop() {
     connection_state_ = ConnectionState::STOPPED;
     error_message_ = String();
@@ -46,11 +63,23 @@ class TftpClient : public Stream {
     udp_.stop();
   }
 
+  /**
+   * Begins the download of a file from the server
+   *
+   * @param name              File name to download
+   * @param tftp_server_ip    IP address of the TFTP server. Defaults to
+   *                          the broadcast IP. Which should work with servers
+   *                          on the same subnet as the client.
+   * @param tftp_server_port  UDP port of the TFTP server. Defaults to 69.
+   *
+   * @returns true if successful and false otherwise
+   */
   bool beginDownload(const char *name,
                      const IPAddress &tftp_server_ip = IPAddress(255, 255, 255, 255),
                      uint16_t tftp_server_port = 69) {
     stop();
-    begin(local_port_);
+    if (!begin(local_port_))
+      return false;
 
     // Create read request
     if (!udp_.beginPacket(tftp_server_ip, tftp_server_port))
@@ -76,6 +105,11 @@ class TftpClient : public Stream {
     return true;
   }
 
+  /**
+   * Returns the number of bytes that are available for reading
+   *
+   * @returns Number of bytes available or 0
+   */
   int available() override {
     if (finished() || error() || stopped())
       return 0;
@@ -122,6 +156,14 @@ class TftpClient : public Stream {
     return 0;
   }
 
+  /**
+   * Reads data from the TFTP file into a buffer
+   *
+   * @param buf  Pointer to a byte buffer
+   * @param size Size of the buffer
+   *
+   * @returns Number of bytes actually read. Can be smaller than @p size
+   */
   int read(uint8_t *buf, size_t size) {
     if (available() == 0)
       return 0;
@@ -132,6 +174,9 @@ class TftpClient : public Stream {
     return bytes_read;
   }
 
+  /**
+   * Reads a single byte
+   */
   int read() override {
     uint8_t val;
     if (read(&val, 1) != 1)
@@ -139,6 +184,9 @@ class TftpClient : public Stream {
     return val;
   }
 
+  /**
+   * Reads a single byte without consuming it.
+   */
   int peek() override {
     return udp_.peek();
   }
@@ -147,28 +195,57 @@ class TftpClient : public Stream {
     udp_.flush();
   }
 
+  /**
+   * Returns true if the transfer finished successfully
+   */
   bool finished() {
     return connection_state_ == ConnectionState::FINISHED;
   }
 
+  /**
+   * Returns true if there was an error during the transfer
+   *
+   * If this method returns true, then the current error message is available
+   * with the method @see errorMessage()
+   */
   bool error() {
     return connection_state_ == ConnectionState::ERROR;
   }
 
+  /**
+   * Returns true if the stop function was called
+   */
   bool stopped() {
     return connection_state_ == ConnectionState::STOPPED;
   }
 
+  /**
+   * Returns the current error message as a String object
+   */
   const String &errorMessage() {
     return error_message_;
   }
 
-  size_t write(uint8_t) override {}
-  size_t write(const uint8_t *buf, size_t size) {}
+  size_t write(uint8_t) override {
+    // Not implemented yet
+    return 0;
+  }
+  size_t write(const uint8_t *buf, size_t size) {
+    // Not implemented yet
+    return 0;
+  }
 
+  /**
+   * Returns the IP address of the TFTP server this instance is currently
+   * connected to
+   */
   IPAddress remoteIP() {
     return udp_.remoteIP();
   }
+
+  /**
+   * Returns the port number of the current connection
+   */
   uint16_t remotePort() {
     return udp_.remotePort();
   }
