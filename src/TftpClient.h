@@ -81,31 +81,8 @@ class TftpClient : public Stream {
     if (!begin(local_port_))
       return false;
 
-    if (is_same<UIP_UDPImpl, UDPImpl>::value) {
-      /*
-       * The UIPUDP library cannot handle the fact, that the TFTP server
-       * responds on a different port than 69. So it is necessary to use a
-       * different socket for the initial packet.
-       */
-      UDPImpl init;
-
-      init.begin(local_port_);
-
-      if (!sendReadRequest(name, tftp_server_ip, tftp_server_port, &init))
-        return false;
-
-      // Wait until the first response from the server arrives
-      while (!error() && !finished() && !available()) {
-        yield();
-      }
-
-      // Release memory
-      init.stop();
-      return error() == false;
-    } else {
-      if (!sendReadRequest(name, tftp_server_ip, tftp_server_port, &udp_))
-        return false;
-    }
+    if (!sendInitialRequest(name, OpCode::READ, tftp_server_ip, tftp_server_port))
+      return false;
 
     return true;
   }
@@ -231,10 +208,10 @@ class TftpClient : public Stream {
     return error_message_;
   }
 
-  size_t write(uint8_t) override {
-    // Not implemented yet
-    return 0;
+  size_t write(uint8_t val) override {
+    return write(&val, 1);
   }
+
   size_t write(const uint8_t *buf, size_t size) {
     // Not implemented yet
     return 0;
@@ -274,9 +251,7 @@ class TftpClient : public Stream {
 
     if (block_id < current_block_id_) {
       // Ignore the packet
-      uint8_t buf[128];
-      while (udp_.available())
-        udp_.read(buf, sizeof(buf));
+      udp_.flush();
 
       // Resend the acknowledge for the block
       sendAcknowledge(block_id);
@@ -304,9 +279,7 @@ class TftpClient : public Stream {
 
   void handleOptAck() {
     // Read all of the packet
-    uint8_t buf[32];
-    while (udp_.available())
-      udp_.read(buf, sizeof(buf));
+    udp_.flush();
 
     // Acknowledge block 0
     sendAcknowledge(0);
@@ -349,16 +322,52 @@ class TftpClient : public Stream {
     }
   }
 
-  bool sendReadRequest(const char *name,
-                       const IPAddress &tftp_server_ip,
-                       uint16_t tftp_server_port,
-                       UDPImpl *udp) {
+  bool sendInitialRequest(const char *name,
+                          uint8_t op_code,
+                          const IPAddress &tftp_server_ip,
+                          uint16_t tftp_server_port) {
+    if (is_same<UIP_UDPImpl, UDPImpl>::value) {
+      /*
+       * The UIPUDP library cannot handle the fact, that the TFTP server
+       * responds on a different port than 69. So it is necessary to use a
+       * different socket for the initial packet.
+       */
+      UDPImpl init;
+
+      init.begin(local_port_);
+
+      if (!sendRequest(name, op_code, tftp_server_ip,
+                       tftp_server_port, &init))
+        return false;
+
+      // Wait until the first response from the server arrives
+      while (!error() && !finished() && !available()) {
+        yield();
+      }
+
+      // Release memory
+      init.stop();
+      return error() == false;
+    } else {
+      if (!sendRequest(name, op_code,
+                       tftp_server_ip, tftp_server_port, &udp_))
+        return false;
+    }
+
+    return true;
+  }
+
+  bool sendRequest(const char *name,
+                   uint8_t op_code,
+                   const IPAddress &tftp_server_ip,
+                   uint16_t tftp_server_port,
+                   UDPImpl *udp) {
         // Create read request
     if (!udp->beginPacket(tftp_server_ip, tftp_server_port))
       return false;
 
     udp->write(ZERO_BYTE);
-    udp->write(OpCode::READ);
+    udp->write(op_code);
     udp->print(name);
     udp->write(ZERO_BYTE);
     udp->print("octet");
