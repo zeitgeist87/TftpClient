@@ -314,7 +314,7 @@ class TftpClient : public Stream {
       return;
     }
 
-    udp_.write('\0');
+    udp_.write(ZERO_BYTE);
     udp_.write(OpCode::ACK);
     udp_.write(block_id >> 8);
     udp_.write(block_id & 0xFF);
@@ -332,12 +332,12 @@ class TftpClient : public Stream {
       return;
     }
 
-    udp_.write('\0');
+    udp_.write(ZERO_BYTE);
     udp_.write(OpCode::ERROR);
     udp_.write(error_code >> 8);
     udp_.write(error_code & 0xFF);
     udp_.print(error_msg);
-    udp_.write('\0');
+    udp_.write(ZERO_BYTE);
 
     if (!udp_.endPacket()) {
       return;
@@ -352,16 +352,16 @@ class TftpClient : public Stream {
     if (!udp->beginPacket(tftp_server_ip, tftp_server_port))
       return false;
 
-    udp->write('\0');
+    udp->write(ZERO_BYTE);
     udp->write(OpCode::READ);
     udp->print(name);
-    udp->write('\0');
+    udp->write(ZERO_BYTE);
     udp->print("octet");
-    udp->write('\0');
+    udp->write(ZERO_BYTE);
     udp->print("blksize");
-    udp->write('\0');
+    udp->write(ZERO_BYTE);
     udp->print(BLOCK_SIZE);
-    udp->write('\0');
+    udp->write(ZERO_BYTE);
 
     if (!udp->endPacket())
       return false;
@@ -403,11 +403,12 @@ class TftpClient : public Stream {
   }
 
 #ifdef ARDUINO_ARCH_AVR
-  static constexpr unsigned int BLOCK_SIZE = 96;
+  static constexpr int BLOCK_SIZE = 96;
 #else
-  static constexpr unsigned int BLOCK_SIZE = 512;
+  static constexpr int BLOCK_SIZE = 512;
 #endif
   static constexpr unsigned int TIMEOUT_MS = 2000;
+  static constexpr uint8_t ZERO_BYTE = 0;
 
   enum OpCode {
     READ = 1,
