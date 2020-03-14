@@ -255,6 +255,11 @@ class TftpClient : public Stream {
     return udp_.remotePort();
   }
 
+  ~TftpClient() {
+    // Free up resources
+    udp_.stop();
+  }
+
  private:
   void handleDataBlock() {
     uint16_t block_id = udp_.read();
