@@ -81,27 +81,32 @@ class TftpClient : public Stream {
     if (!begin(local_port_))
       return false;
 
-    // Create read request
-    if (!udp_.beginPacket(tftp_server_ip, tftp_server_port))
-      return false;
+    if (is_same<UIP_UDPImpl, UDPImpl>::value) {
+      /*
+       * The UIPUDP library cannot handle the fact, that the TFTP server
+       * responds on a different port than 69. So it is necessary to use a
+       * different socket for the initial packet.
+       */
+      UDPImpl init;
 
-    udp_.write('\0');
-    udp_.write(OpCode::READ);
-    udp_.print(name);
-    udp_.write('\0');
-    udp_.print("octet");
-    udp_.write('\0');
-    udp_.print("blksize");
-    udp_.write('\0');
-    udp_.print(BLOCK_SIZE);
-    udp_.write('\0');
+      init.begin(local_port_);
 
-    if (!udp_.endPacket())
-      return false;
+      if (!sendReadRequest(name, tftp_server_ip, tftp_server_port, &init))
+        return false;
 
-    current_block_id_ = 1;
-    connection_state_ = ConnectionState::TRANSFERING;
-    last_action_ts_ = millis();
+      // Wait until the first response from the server arrives
+      while (!error() && !finished() && !available()) {
+        yield();
+      }
+
+      // Release memory
+      init.stop();
+      return error() == false;
+    } else {
+      if (!sendReadRequest(name, tftp_server_ip, tftp_server_port, &udp_))
+        return false;
+    }
+
     return true;
   }
 
@@ -339,6 +344,35 @@ class TftpClient : public Stream {
     }
   }
 
+  bool sendReadRequest(const char *name,
+                       const IPAddress &tftp_server_ip,
+                       uint16_t tftp_server_port,
+                       UDPImpl *udp) {
+        // Create read request
+    if (!udp->beginPacket(tftp_server_ip, tftp_server_port))
+      return false;
+
+    udp->write('\0');
+    udp->write(OpCode::READ);
+    udp->print(name);
+    udp->write('\0');
+    udp->print("octet");
+    udp->write('\0');
+    udp->print("blksize");
+    udp->write('\0');
+    udp->print(BLOCK_SIZE);
+    udp->write('\0');
+
+    if (!udp->endPacket())
+      return false;
+
+    current_block_id_ = 1;
+    connection_state_ = ConnectionState::TRANSFERING;
+    last_action_ts_ = millis();
+
+    return true;
+  }
+
   void checkAcknowledge() {
     // Send acknowledge after all bytes have been read
     if (available() == 0) {
@@ -369,7 +403,7 @@ class TftpClient : public Stream {
   }
 
 #ifdef ARDUINO_ARCH_AVR
-  static constexpr unsigned int BLOCK_SIZE = 68;
+  static constexpr unsigned int BLOCK_SIZE = 96;
 #else
   static constexpr unsigned int BLOCK_SIZE = 512;
 #endif
@@ -401,6 +435,27 @@ class TftpClient : public Stream {
   // Port to listen to
   uint16_t local_port_ = 0;
   UDPImpl udp_;
+
+  /*
+   *  Some utility functions and classes to detect the UDPImpl capabilities
+   */
+#ifdef UIPUDP_H
+  using UIP_UDPImpl = UIPUDP;
+#else
+  using UIP_UDPImpl = void;
+#endif
+
+  // Some template magic to detect types
+  template<typename _Tp, _Tp __v>
+  struct integral_constant {
+    static constexpr _Tp                  value = __v;
+  };
+
+  template<typename, typename>
+  struct is_same : public integral_constant<bool, false> { };
+
+  template<typename _Tp>
+  struct is_same<_Tp, _Tp> : public integral_constant<bool, true> { };
 };
 
 #endif  // TFTP_CLIENT_H
